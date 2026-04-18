@@ -200,7 +200,7 @@ a:hover {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-image: url('img/fundo.jpg');
+    background-image: url('../img/fundo.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -1183,6 +1183,76 @@ code {
     border-radius: 3px;
     font-family: 'Courier New', monospace;
     color: var(--color-primary);
+}
+
+/* ========== Admin Management Section ========== */
+.admins-list {
+    background: var(--color-light-secondary);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+}
+
+.admin-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.admin-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: var(--color-light);
+    border: 1px solid #E0E0E0;
+    border-radius: var(--border-radius);
+    transition: all var(--transition-normal);
+}
+
+.admin-item:hover {
+    border-color: var(--color-accent);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.1);
+}
+
+.admin-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.admin-email {
+    font-weight: 600;
+    color: var(--color-dark);
+    font-size: 1rem;
+}
+
+.admin-date {
+    color: var(--color-text-light);
+    font-size: 0.85rem;
+}
+
+.btn-small {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.85rem !important;
+    white-space: nowrap;
+}
+
+.btn-danger {
+    background: #e74c3c !important;
+    color: white !important;
+}
+
+.btn-danger:hover {
+    background: #c0392b !important;
+}
+
+.loading-text {
+    color: var(--color-text-light);
+    font-style: italic;
+}
+
+.admin-note.error {
+    color: #e74c3c;
 }
 
 /* ========== Instrumentais Section ========== */

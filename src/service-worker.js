@@ -1,14 +1,14 @@
 // Service Worker para PWA - Fados IPCA
 const CACHE_NAME = 'fados-ipca-v6';
 const urlsToCache = [
-    './',
-    './index.html',
+    '../',
+    '../index.html',
     './styles.css',
     './script.js',
     './ferramentas.js',
     './data.js',
-    './img/logo1.png',
-    './img/fundo.jpg'
+    '../img/logo1.png',
+    '../img/fundo.jpg'
 ];
 
 // URLs a ignorar (não cachear APIs)

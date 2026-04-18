@@ -1,7 +1,6 @@
 // Main JavaScript file for Fados IPCA website
 
 // ========== AUTENTICAÇÃO (Global) ==========
-const ADMIN_EMAILS = ['admin@exemplo.com'];
 let isAuthenticated = false; // Controla se o utilizador está autenticado
 let userRole = 'visitor'; // 'visitor', 'member', ou 'admin'
 let currentSong = null; // Armazena a música atual do modal
@@ -24,14 +23,50 @@ function initializeFirebase() {
     firebaseAuth.onAuthStateChanged(handleAuthStateChange);
 }
 
-function handleAuthStateChange(user) {
+async function checkAdminStatus(user) {
+    if (!user || !user.email) {
+        console.log('checkAdminStatus: Missing user or email');
+        return false;
+    }
+
+    // Garante que firebaseDb está inicializado
+    let attempts = 0;
+    while (!firebaseDb && attempts < 10) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+    }
+
+    if (!firebaseDb) {
+        console.error('checkAdminStatus: firebaseDb não inicializado após 10 tentativas');
+        return false;
+    }
+
+    try {
+        console.log('🔍 Verificando status de admin para:', user.email);
+        const adminDoc = await firebaseDb.collection('admins').doc(user.email).get();
+        console.log('✅ Admin doc exists:', adminDoc.exists);
+        if (adminDoc.exists) {
+            console.log('📄 Admin doc data:', adminDoc.data());
+        }
+        return adminDoc.exists;
+    } catch (error) {
+        console.error('❌ ERRO ao verificar status de admin:', error.message);
+        return false;
+    }
+}
+
+async function handleAuthStateChange(user) {
     isAuthenticated = Boolean(user);
-    if (user && user.email && ADMIN_EMAILS.includes(user.email)) {
-        userRole = 'admin';
-    } else if (user) {
-        userRole = 'member';
+    console.log('👤 handleAuthStateChange - User:', user?.email, 'Authenticated:', isAuthenticated);
+    
+    if (user) {
+        const isAdmin = await checkAdminStatus(user);
+        console.log('🔐 isAdmin result:', isAdmin);
+        userRole = isAdmin ? 'admin' : 'member';
+        console.log('👑 User role set to:', userRole);
     } else {
         userRole = 'visitor';
+        console.log('👻 User role set to: visitor');
     }
 
     updateAuthUI(user);
@@ -292,6 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeModal();
     initializeScrollEffects();
     initializeAdmin();
+    initializeAdminManagement();
 });
 
 // ========== Navigation ==========
@@ -1158,7 +1194,7 @@ function initializeAdmin() {
         try {
             const provider = new firebase.auth.GoogleAuthProvider();
             const result = await firebaseAuth.signInWithPopup(provider);
-            const isAdmin = result.user && ADMIN_EMAILS.includes(result.user.email);
+            const isAdmin = await checkAdminStatus(result.user);
 
             if (isAdmin) {
                 adminLogin.style.display = 'none';
@@ -1304,6 +1340,128 @@ const libraryResources = ${JSON.stringify(tempLibraryResources, null, 2)};`;
             alert('📋 Selecione o texto e copie manualmente (Ctrl+C)');
         }
     });
+}
+
+// ========== Manage Admins Functions ==========
+async function loadAdminsList() {
+    if (!firebaseDb) return;
+
+    const adminsList = document.getElementById('adminsList');
+    if (!adminsList) return;
+
+    try {
+        const snapshot = await firebaseDb.collection('admins').get();
+        
+        if (snapshot.empty) {
+            adminsList.innerHTML = '<p class="admin-note">Nenhum admin registado ainda.</p>';
+            return;
+        }
+
+        let html = '<div class="admin-items-list">';
+        
+        snapshot.forEach(doc => {
+            const admin = doc.data();
+            const adminEmail = doc.id;
+            html += `
+                <div class="admin-item">
+                    <div class="admin-item-info">
+                        <span class="admin-email">${adminEmail}</span>
+                        <span class="admin-date">Desde: ${admin.addedDate || 'Data desconhecida'}</span>
+                    </div>
+                    <button class="btn btn-danger btn-small" onclick="removeAdmin('${adminEmail}')">🗑️ Remover</button>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        adminsList.innerHTML = html;
+    } catch (error) {
+        console.error('Erro ao carregar admins:', error);
+        adminsList.innerHTML = `<p class="admin-note error">❌ Erro ao carregar admins: ${error.message}</p>`;
+    }
+}
+
+async function addAdmin(email) {
+    if (!email || !email.includes('@')) {
+        alert('❌ Por favor, insira um email válido');
+        return;
+    }
+
+    if (!firebaseDb) {
+        alert('❌ Firebase não configurado');
+        return;
+    }
+
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        await firebaseDb.collection('admins').doc(email).set({
+            addedDate: today,
+            name: email.split('@')[0]
+        });
+
+        alert(`✅ Admin adicionado: ${email}`);
+        document.getElementById('newAdminEmail').value = '';
+        
+        // Recarregar lista
+        loadAdminsList();
+    } catch (error) {
+        console.error('Erro ao adicionar admin:', error);
+        alert(`❌ Erro ao adicionar admin: ${error.message}`);
+    }
+}
+
+async function removeAdmin(email) {
+    if (!confirm(`Tem a certeza que deseja remover ${email} como admin?`)) {
+        return;
+    }
+
+    if (!firebaseDb) {
+        alert('❌ Firebase não configurado');
+        return;
+    }
+
+    try {
+        await firebaseDb.collection('admins').doc(email).delete();
+        
+        alert(`✅ Admin removido: ${email}`);
+        loadAdminsList();
+    } catch (error) {
+        console.error('Erro ao remover admin:', error);
+        alert(`❌ Erro ao remover admin: ${error.message}`);
+    }
+}
+
+// Initialize admin management UI
+function initializeAdminManagement() {
+    const btnAddAdmin = document.getElementById('btnAddAdmin');
+    const newAdminEmail = document.getElementById('newAdminEmail');
+    
+    if (btnAddAdmin) {
+        btnAddAdmin.addEventListener('click', () => {
+            const email = newAdminEmail.value.trim();
+            addAdmin(email);
+        });
+        
+        // Allow Enter key to add admin
+        if (newAdminEmail) {
+            newAdminEmail.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const email = newAdminEmail.value.trim();
+                    addAdmin(email);
+                }
+            });
+        }
+    }
+    
+    // Load initial list when admin modal is opened
+    const btnAdmin = document.getElementById('btnAdmin');
+    if (btnAdmin) {
+        btnAdmin.addEventListener('click', () => {
+            if (userRole === 'admin') {
+                setTimeout(loadAdminsList, 500);
+            }
+        });
+    }
 }
 
 // ========== Instrumentais Section ==========

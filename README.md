@@ -1,5 +1,7 @@
 # Grupo de Fados do IPCA - Site Oficial
 
+TUDO TEMPORÁRIO
+
 Site estático moderno e elegante para o Grupo de Fados do IPCA, criado para centralizar partituras, letras, vídeos de ensaio e informações do grupo.
 
 ## 📋 Características
