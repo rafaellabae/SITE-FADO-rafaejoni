@@ -1,0 +1,32 @@
+# Ficheiros do sistema operativo
+.DS_Store
+Thumbs.db
+
+# Ficheiros temporários
+*.tmp
+*.log
+~$*
+
+# Ficheiros de backup
+*.bak
+*~
+
+# Node modules (se usar)
+node_modules/
+
+# Ficheiros ZIP
+*.zip
+
+# Ficheiros de áudio e vídeo (demasiado grandes para GitHub)
+*.mp3
+*.mp4
+*.wav
+*.m4a
+*.WAV
+*.avi
+*.mov
+*.flv
+
+# Gravações na biblioteca (manter estrutura mas ignorar media)
+biblioteca/**/Gravações/
+biblioteca/Instrumentais/Originais/
